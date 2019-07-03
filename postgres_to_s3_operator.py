@@ -56,20 +56,22 @@ class PostgresToS3(BaseOperator):
         secret_key = credentials.secret_key
         bucket_name = self.s3_bucket
         key = self.s3_key
-        bucket_full_path = f's3://{bucket_name}/{key}'
+        bucket_full_path = f's3://{bucket_name}/{key+self.file_name}'
+        file_folder = f's3://{bucket_name}/{key}/'
        
         client = boto3.client('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key) 
         transfer = S3Transfer(client)
         transfer.upload_file(path_file, bucket_name, key+self.file_name)
 
-
+        #send keys to another operator
         task_instance = context['task_instance']
-        task_instance.xcom_push(key="s3_bucket", value=bucket_name)
-        task_instance.xcom_push(key="s3_key", value=key)
         task_instance.xcom_push(key="s3_bucket_full", value=bucket_full_path)
-        task_instance.xcom_push(key="filename", value=self.file_name)
+        task_instance.xcom_push(key="s3_file_folder", value=file_folder)        
 
-        logging.info(f'upload_file to s3://{bucket_name}/{key+self.file_name}')
+
+        logging.info(f'upload_file to '+bucket_full_path + '\n')
+        logging.info(f'savin file in'+file_folder)
+        
         
     
 class PostgresPlugin(AirflowPlugin):
